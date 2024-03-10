@@ -1,0 +1,57 @@
+import React, { useState, useEffect } from "react";
+import { Box, Flex, Heading, Text, Link, Spinner } from "@chakra-ui/react";
+import { FaExternalLinkAlt, FaArrowUp, FaArrowDown } from "react-icons/fa";
+
+const Index = () => {
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("https://hacker-news.firebaseio.com/v0/topstories.json")
+      .then((response) => response.json())
+      .then((ids) => {
+        const promises = ids.slice(0, 30).map((id) => fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then((response) => response.json()));
+        Promise.all(promises).then((data) => {
+          setNews(data);
+          setLoading(false);
+        });
+      })
+      .catch((error) => console.error(error));
+  }, []);
+
+  return (
+    <Box maxW="800px" mx="auto" p={4}>
+      <Heading mb={4}>Hacker News</Heading>
+      {loading ? (
+        <Flex justify="center">
+          <Spinner />
+        </Flex>
+      ) : (
+        news.map((story) => (
+          <Box key={story.id} mb={4} borderWidth="1px" borderRadius="md" p={4}>
+            <Flex alignItems="center" mb={2}>
+              <Box as="span" mr={2}>
+                <FaArrowUp />
+              </Box>
+              <Text fontWeight="bold">{story.score}</Text>
+              <Box as="span" mx={2}>
+                <FaArrowDown />
+              </Box>
+            </Flex>
+            <Heading size="md" mb={2}>
+              <Link href={story.url} isExternal>
+                {story.title} <FaExternalLinkAlt />
+              </Link>
+            </Heading>
+            <Text mb={2}>
+              by {story.by} | {new Date(story.time * 1000).toLocaleString()}
+            </Text>
+            <Text>{story.kids && story.kids.length} comments</Text>
+          </Box>
+        ))
+      )}
+    </Box>
+  );
+};
+
+export default Index;
